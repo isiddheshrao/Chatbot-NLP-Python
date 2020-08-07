@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 19 18:55:27 2019
-
-@author: Siddhesh Rao
-"""
-
 # Building a chatbot with DeepNLP
 #importing Libraries
 
@@ -12,20 +5,24 @@ import numpy as np
 import tensorflow as tf
 import re
 import time
+
 # Data_Preprocessing
 lines = open("movie_lines.txt", encoding="utf-8", errors = "ignore").read().split("\n")
 conversations = open("movie_conversations.txt", encoding="utf-8", errors = "ignore").read().split("\n")
+
 #creating dictionary. mapping line to id
 id2line={}
 for line in lines:
     _line = line.split(" +++$+++ ")
     if len(_line)==5:
         id2line[_line[0]] = _line[4]
+
 #creating list of all conversations
 conversations_ids = []
 for conversation in conversations[:-1]:
     _conversation = conversation.split(" +++$+++ ")[-1][1:-1].replace("'","").replace(" ","")
     conversations_ids.append(_conversation.split(","))
+
 #getting questions and answers seperately
 questions = []
 answers = []
@@ -33,6 +30,7 @@ for conversation in conversations_ids:
     for i in range(len(conversation)-1):
         questions.append(id2line[conversation[i]])
         answers.append(id2line[conversation[i+1]])
+
 #doing cleaning of texts- first
 def clean_text(text):
     text = text.lower()
@@ -49,14 +47,17 @@ def clean_text(text):
     text = re.sub(r"wont", "will not", text)
     text = re.sub(r"[-()\"#/@:;<>{}+=~|.?,]", "", text)
     return text
+
 #cleaning questions
 clean_questions = []
 for question in questions:
     clean_questions.append(clean_text(question))
+
 #cleaning answers
 clean_answers = []
 for answer in answers:
     clean_answers.append(clean_text(answer))
+
 #dictionary to map each word based on its occurances
 word2count = {}
 for question in clean_questions:
@@ -71,3 +72,28 @@ for answer in clean_answers:
             word2count[word] = 1
         else:
             word2count[word] += 1
+
+#creating 2 dictionary that map question words and answer words to a unique integer
+threshold = 20
+questionswords2int ={}
+word_number = 0
+for word,count in word2count.items():
+    if count>= threshold:
+        questionswords2int[word] = word_number
+        word_number += 1
+answerswords2int ={}
+word_number = 0
+for word,count in word2count.items():
+    if count>= threshold:
+        answerswords2int[word] = word_number
+        word_number += 1        
+
+#adding last tokens to these 2 dictionaries
+tokens = ['<PAD>','<EOS>','<OUT>','<SOS>']
+for token in tokens:
+    questionswords2int[token] = len(questionswords2int) + 1
+for token in tokens:
+    answerswords2int[token] = len(answerswords2int) + 1
+
+# Creating inverse dictionary of answerswords2int dict
+answersint2word = {w_i: w for w, w_i in answerswords2int.items()}
